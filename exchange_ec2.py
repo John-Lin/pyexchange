@@ -19,13 +19,13 @@ def cls():
 def alertMail(sub, txt):
         parser = SafeConfigParser()
         parser.read('mail.conf')
-
+        
         gmail_user = parser.get('sender', 'user')
         gmail_pwd = parser.get('sender', 'pwd')
-
+        
         r1 = parser.get('recipients', 'recipient1')
-        #r2 = parser.get('recipient', 'recipient2')
-
+        #r2 = parser.get('recipients', 'recipient2')
+        
         FROM = gmail_user
         BCC = [r1] #must be a list
         TO = [] #for testing
@@ -56,7 +56,7 @@ class myThread (Thread):
         obj.getExchange()
         obj.show()
         obj.threshold()
-        obj.subscription()
+        obj.subscription()        
         # Free lock to release next thread
         threadLock.release()
         queue.task_done()
@@ -85,10 +85,10 @@ class Exchange(object):
         self.max_rate = max_rate
         self.min_rate = min_rate
         self.gmt = None
-
+    
     def __getGmt(self):
         self.gmt = strftime("%a, %d %b %Y %H:%M:%S", localtime())
-        # for localtime in taiwan
+        # for localtime in taiwan 
         #self.gmt = strftime("%a, %d %b %Y %H:%M:%S", gmtime(time()+28800))
         # for EC2 at America west time
 
@@ -115,7 +115,7 @@ class Exchange(object):
             'TWDJPY':'新台幣對日幣',
             'CNYTWD':'人民幣對新台幣',
             'HKDTWD':'港幣對新台幣',
-            'SGDTWD':'新加坡幣對新台幣'
+            'SGDTWD':'新加坡幣對新台幣'    
         }
         try:
             self.text = code_chn[self.code]
@@ -124,9 +124,9 @@ class Exchange(object):
 
     def getExchange(self):
         self.__getGmt()
-
+        
         headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
-        req = urllib2.Request(self.url, headers=headers)
+        req = urllib2.Request(self.url, headers=headers) 
 
         try:
             response = urllib2.urlopen(req)
@@ -135,7 +135,7 @@ class Exchange(object):
             sys.exit(1)
             # Maybe get 502 Bad Gateway Error
             # Halt python and waitting for whatchdog.sh
-
+        
         html = response.read()
         data = []
         for row in csv.DictReader(html):
@@ -143,11 +143,11 @@ class Exchange(object):
                 pass
             else:
                 data.append(row[self.code+'=X'])
-
+        
         times = data.pop() # no use
         date = data.pop()  # no use
         self.rate = float(''.join(data))
-
+    
     def show(self):
         sys.stdout.write(self.code+": " + str(self.rate)+ '\n')
         #sys.stdout.write("\r"+self.code+": " + str(self.rate) + ' ' + ' ' + self.gmt)
@@ -165,6 +165,8 @@ class Exchange(object):
         base = self.rate
 
         if self.rate >= self.max_rate:
+            #TODO 
+            #Write into configure
             alerttext = self.text + ": " + str(self.rate) + '\n時間：'+ self.gmt
             __alertthread(alertMail, "匯率觸發通知", alerttext)
             #self.__alertMail()
@@ -172,8 +174,10 @@ class Exchange(object):
             sys.stdout.flush()
             self.max_rate = base + 1
             # send max_rate mail
-
+        
         if self.rate <= self.min_rate:
+            #TODO 
+            #Write into configure
             alerttext = self.text + ": " + str(self.rate) + '\n時間：'+ self.gmt
             __alertthread(alertMail, "匯率觸發通知", alerttext)
             #self.__alertMail()
@@ -181,29 +185,29 @@ class Exchange(object):
             sys.stdout.flush()
             self.min_rate = base - 1
             #send min_rate mail
-
-
+        
+    
     def subscription(self, hour=10, mins=0, hour2=14, mins2=0):
         self.__getGmt()
-        #tt = struct_time(localtime())
+        #tt = struct_time(localtime()) 
         tt = struct_time(gmtime(time()+28800))
         # for EC2 at America west time
         # 10:00 Alert
         if tt.tm_hour == hour and tt.tm_min == mins and tt.tm_sec <= 19:
             alerttext = self.text + ": " + str(self.rate) + '\n時間：'+ self.gmt
             sub = "每日" + str(hour) + "點匯率通知"
-
+            
             t = mailThread(sub, alerttext)
             t.daemon = True
             t.start()
             #t = Thread(target=self.__alertMail, args=(sub, alerttext))
             #t.start()
-
+        
         # 14:00 Alert
         elif tt.tm_hour == hour2 and tt.tm_min == mins2 and tt.tm_sec <= 19:
             alerttext = self.text + ": " + str(self.rate) + '\n時間：'+ self.gmt
             sub = "每日" + str(hour2) + "點匯率通知"
-
+            
             t = mailThread(sub, alerttext)
             t.daemon = True
             t.start()
@@ -213,17 +217,17 @@ class Exchange(object):
             return
 
 if __name__ == '__main__':
-
+    
     usdtwd = Exchange('USDTWD', max_rate=31.5, min_rate=29.3)
-    usdjpy = Exchange('USDJPY', max_rate=103.0, min_rate=101.0)
-    cnytwd = Exchange('AUDUSD', max_rate=0.905, min_rate=0.88)
+    usdjpy = Exchange('USDJPY', max_rate=105.0, min_rate=101.0)
+    audusd = Exchange('AUDUSD', max_rate=0.91, min_rate=0.88)
     audtwd = Exchange('AUDTWD', max_rate=None, min_rate=None)
     eurtwd = Exchange('EURTWD', max_rate=None, min_rate=None)
     twdjpy = Exchange('TWDJPY', max_rate=None, min_rate=None)
-    audusd = Exchange('CNYTWD', max_rate=None, min_rate=None)
+    cnytwd = Exchange('CNYTWD', max_rate=None, min_rate=None)
 
     exchanges = [usdtwd, usdjpy, cnytwd, audtwd, eurtwd, twdjpy, audusd]
-
+    
 
     while True:
         for ex in exchanges:
@@ -233,7 +237,7 @@ if __name__ == '__main__':
            th = myThread()
            th.daemon = True
            th.start()
-
+        
         sys.stdout.write('==========\n')
         sys.stdout.flush()
         #print th.isAlive() #True
