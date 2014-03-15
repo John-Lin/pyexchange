@@ -1,13 +1,15 @@
 #!/usr/bin/python
-from exchange_ec2 import Exchange
-from threading import Thread, Lock
-from ConfigParser import SafeConfigParser
-from Queue import Queue
+import os
 import sys
+from progressBar import progress
+from exchange_ec2 import Exchange
+from ConfigParser import SafeConfigParser
 from time import sleep
 
-queue = Queue()
-threadLock = Lock()
+flag = []
+
+def cls():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def limH(rate):
     parser = SafeConfigParser()
@@ -20,19 +22,6 @@ def limL(rate):
     parser.read('rate.conf')
     low_limit = parser.getfloat(rate, 'low')
     return low_limit
-
-class myThread (Thread):
-    def run(self):
-        # Get lock to synchronize threads
-        threadLock.acquire()
-        obj = queue.get()
-        obj.getExchange()
-        obj.show()
-        obj.threshold()
-        obj.subscription()        
-        # Free lock to release next thread
-        threadLock.release()
-        queue.task_done()
 
 usdtwd = Exchange('USDTWD', max_rate=limH('usdtwd'), min_rate=limL('usdtwd'))
 usdjpy = Exchange('USDJPY', max_rate=limH('usdjpy'), min_rate=limL('usdjpy'))
@@ -47,17 +36,13 @@ exchanges = [usdtwd, usdjpy, audusd, audtwd, eurtwd, twdjpy, cnytwd]
 
 
 while True:
-    for ex in exchanges:
-        queue.put(ex)
 
     for ex in exchanges:
-       th = myThread()
-       th.daemon = True
-       th.start()
-    
-    sys.stdout.write('==========\n')
-    sys.stdout.flush()
-    #print th.isAlive() #True
-    queue.join()
-    #print th.isAlive() #False
-    sleep(20)
+        ex.getExchange()
+        ex.show()
+        ex.threshold()
+        ex.subscription()
+
+    #sys.stdout.write('==========\n')
+    #sys.stdout.flush()
+    progress(40, 0.5)
