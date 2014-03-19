@@ -2,7 +2,7 @@
 import os
 import sys
 from progressBar import progress
-from exchange_ec2 import Exchange
+from exchange import Exchange
 from ConfigParser import SafeConfigParser
 from time import sleep
 
