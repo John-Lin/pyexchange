@@ -175,6 +175,11 @@ class Exchange(object):
         #tt = struct_time(localtime())
         tt = struct_time(gmtime(time() + 28800))
         # for EC2 at America west time
+
+        #Saturday and Sunday don't need to subscript
+        if tt.tm_wday == 5 or tt.tm_wday == 6:
+            return
+
         # 10:00 Alert
         if tt.tm_hour == hour and tt.tm_min == mins and tt.tm_sec <= 19:
             alerttext = self.text + ": " + str(self.rate) + '\n時間：' + self.gmt
@@ -192,7 +197,6 @@ class Exchange(object):
             t = mailThread(sub, alerttext)
             t.daemon = True
             t.start()
-        
         else:
             pass
 
