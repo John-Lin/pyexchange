@@ -2,9 +2,7 @@
 # shell name: watchdog.sh
  
 ps=`ps ax > /tmp/ps.txt`
- 
 p=`grep "m python run.py" /tmp/ps.txt | awk '{print $9}'`
-
 #echo $p
 
 if [ "$p" != "run.py" ]; then
@@ -19,5 +17,6 @@ else
     echo $p "is running."
 fi
 
+rm -rf /tmp/ps.txt
 
 p=''
